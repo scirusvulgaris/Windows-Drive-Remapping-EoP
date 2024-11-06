@@ -35,7 +35,6 @@ jobs:
       run: |
         cl.exe Exploit/exploit.c /Fe:build/exploit.exe shell32.lib user32.lib advapi32.lib dbghelp.lib
 
-
     - name: Verify Build
       run: |
         if (Test-Path "build\MsCtfMonitor.dll") {
