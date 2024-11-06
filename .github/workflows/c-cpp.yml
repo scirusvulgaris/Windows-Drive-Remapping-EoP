@@ -33,7 +33,7 @@ jobs:
     - name: Build Exploit
       working-directory: ${{ github.workspace }}
       run: |
-        cl.exe Exploit/exploit.c /Fe:build/exploit.exe
+        cl.exe Exploit/exploit.c /Fe:build/exploit.exe shell32.lib user32.lib advapi32.lib
 
     - name: Verify Build
       run: |
@@ -76,4 +76,4 @@ jobs:
 
     - name: List Build Directory
       run: |
-        dir buil
+        dir build
