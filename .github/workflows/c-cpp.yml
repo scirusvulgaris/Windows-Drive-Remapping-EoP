@@ -12,7 +12,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
@@ -25,16 +25,15 @@ jobs:
     - name: Create Build Directory
       run: mkdir build
 
-    - name: Build MsCtfMonitor DLL
-      working-directory: ${{ github.workspace }}
-      run: |
-        cl.exe Exploit/MsCtfMonitor.c /LD /Fe:build/MsCtfMonitor.dll
-
     - name: Build Exploit
       working-directory: ${{ github.workspace }}
       run: |
         cl.exe Exploit/exploit.c /Fe:build/exploit.exe shell32.lib user32.lib advapi32.lib dbghelp.lib
-
+        
+    - name: Build MsCtfMonitor DLL
+      working-directory: ${{ github.workspace }}
+      run: |
+        cl.exe Exploit/MsCtfMonitor.c /LD /Fe:build/MsCtfMonitor.dll
     - name: Verify Build
       run: |
         if (Test-Path "build\MsCtfMonitor.dll") {
