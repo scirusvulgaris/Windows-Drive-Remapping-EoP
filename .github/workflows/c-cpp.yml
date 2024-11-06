@@ -1,0 +1,64 @@
+name: C/C++ CI
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up MinGW
+      uses: egor-tensin/setup-mingw@v2
+      with:
+        platform: x64
+        
+    - name: Create Build Directory
+      run: mkdir build
+      
+    - name: Build MsCtfMonitor DLL
+      run: |
+        gcc -c -DBUILDING_DLL Exploit/MsCtfMonitor.c -o build/MsCtfMonitor.o
+        gcc -shared -o build/MsCtfMonitor.dll build/MsCtfMonitor.o -Wl,--out-implib,build/libMsCtfMonitor.a
+      
+    - name: Build Exploit
+      run: |
+        gcc Exploit/exploit.c -o build/exploit.exe
+        
+    - name: Run Tests
+      run: |
+        if exist build/MsCtfMonitor.dll (echo "MsCtfMonitor.dll built successfully") else (exit 1)
+        if exist build/exploit.exe (echo "exploit.exe built successfully") else (exit 1)
+        
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: CVE-2024-6769-exploit
+        path: |
+          build/MsCtfMonitor.dll
+          build/exploit.exe
+          README.md
+          screenshot-high.png
+          screenshot-medium-plus.png
+
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          build/MsCtfMonitor.dll
+          build/exploit.exe
+          README.md
+          screenshot-high.png
+          screenshot-medium-plus.png
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Check File Sizes
+      run: |
+        dir build\*.dll build\*.exe
