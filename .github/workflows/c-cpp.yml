@@ -13,27 +13,42 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
-    - name: Set up MinGW
-      uses: egor-tensin/setup-mingw@v2
+    - name: Setup MSVC
+      uses: microsoft/setup-msbuild@v1.1
+
+    - name: Setup Windows SDK
+      uses: microsoft/setup-windowsSDK@v1
       with:
-        platform: x64
-        
+        version: 10.0.20348.0
+
     - name: Create Build Directory
       run: mkdir build
       
     - name: Build MsCtfMonitor DLL
       run: |
-        gcc -c -DBUILDING_DLL Exploit/MsCtfMonitor.c -o build/MsCtfMonitor.o
-        gcc -shared -o build/MsCtfMonitor.dll build/MsCtfMonitor.o -Wl,--out-implib,build/libMsCtfMonitor.a
+        cl.exe /LD Exploit/MsCtfMonitor.c /link /OUT:build/MsCtfMonitor.dll
+      shell: cmd
       
     - name: Build Exploit
       run: |
-        gcc Exploit/exploit.c -o build/exploit.exe
+        cl.exe Exploit/exploit.c /link /OUT:build/exploit.exe user32.lib advapi32.lib shell32.lib ntdll.lib
+      shell: cmd
         
-    - name: Run Tests
+    - name: Verify Build
       run: |
-        if exist build/MsCtfMonitor.dll (echo "MsCtfMonitor.dll built successfully") else (exit 1)
-        if exist build/exploit.exe (echo "exploit.exe built successfully") else (exit 1)
+        if (Test-Path "build\MsCtfMonitor.dll") { 
+            Write-Host "MsCtfMonitor.dll built successfully" 
+        } else { 
+            Write-Error "MsCtfMonitor.dll build failed"
+            exit 1
+        }
+        if (Test-Path "build\exploit.exe") { 
+            Write-Host "exploit.exe built successfully" 
+        } else { 
+            Write-Error "exploit.exe build failed"
+            exit 1
+        }
+      shell: pwsh
         
     - name: Upload Artifacts
       uses: actions/upload-artifact@v3
@@ -61,4 +76,7 @@ jobs:
 
     - name: Check File Sizes
       run: |
-        dir build\*.dll build\*.exe
+        Get-ChildItem build\*.dll, build\*.exe | ForEach-Object {
+            Write-Host "$($_.Name) - $($_.Length) bytes"
+        }
+      shell: pwsh
